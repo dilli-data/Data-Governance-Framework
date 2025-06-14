@@ -1,0 +1,11 @@
+student_id,first_name,last_name,email,date_of_birth,ssn,gpa,enrollment_status,department,major,enrollment_date,graduation_date
+AB12345678,John,Smith,john.smith@university.edu,1995-05-15,123-45-6789,3.85,ACTIVE,Computer Science,Software Engineering,2020-08-15,2024-05-15
+CD87654321,Jane,Doe,jane.doe@university.edu,1996-08-22,987-65-4321,3.92,ACTIVE,Mathematics,Data Science,2020-08-15,2024-05-15
+EF12345678,Michael,Johnson,michael.j@university.edu,1995-11-30,456-78-9012,3.45,ACTIVE,Engineering,Mechanical Engineering,2020-08-15,2024-05-15
+GH87654321,Sarah,Williams,sarah.w@university.edu,1996-03-10,789-01-2345,3.78,INACTIVE,Psychology,Clinical Psychology,2020-08-15,2024-05-15
+IJ12345678,David,Brown,david.b@university.edu,1995-07-25,234-56-7890,4.00,GRADUATED,Computer Science,Artificial Intelligence,2019-08-15,2023-05-15
+KL87654321,Emily,Davis,emily.d@university.edu,1996-12-05,567-89-0123,3.65,WITHDRAWN,Business,Finance,2020-08-15,2024-05-15
+MN12345678,Robert,Wilson,robert.w@university.edu,1995-09-18,890-12-3456,3.88,ACTIVE,Engineering,Electrical Engineering,2020-08-15,2024-05-15
+OP87654321,Lisa,Anderson,lisa.a@university.edu,1996-04-30,345-67-8901,3.95,ACTIVE,Mathematics,Statistics,2020-08-15,2024-05-15
+QR12345678,James,Taylor,james.t@university.edu,1995-06-12,678-90-1234,3.72,ACTIVE,Computer Science,Computer Systems,2020-08-15,2024-05-15
+ST87654321,Jennifer,Thomas,jennifer.t@university.edu,1996-10-28,901-23-4567,3.82,ACTIVE,Business,Marketing,2020-08-15,2024-05-15 

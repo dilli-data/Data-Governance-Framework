@@ -1,0 +1,143 @@
+version: '1.0'
+
+# Global settings
+settings:
+  default_catalog: 'AwsDataCatalog'
+  default_database: 'higher_ed_data'
+
+# Role definitions
+roles:
+  - name: 'DataSteward'
+    description: 'Data stewards who can manage data access and quality'
+    permissions:
+      - 'DESCRIBE'
+      - 'SELECT'
+      - 'ALTER'
+      - 'INSERT'
+      - 'DELETE'
+      - 'DROP'
+      - 'CREATE_TABLE'
+      - 'CREATE_DATABASE'
+      - 'GRANT'
+      - 'REVOKE'
+
+  - name: 'DataAnalyst'
+    description: 'Analysts who can query data but cannot modify it'
+    permissions:
+      - 'DESCRIBE'
+      - 'SELECT'
+
+  - name: 'DataEngineer'
+    description: 'Engineers who can create and modify tables'
+    permissions:
+      - 'DESCRIBE'
+      - 'SELECT'
+      - 'ALTER'
+      - 'INSERT'
+      - 'DELETE'
+      - 'CREATE_TABLE'
+
+# Database-level policies
+databases:
+  - name: 'higher_ed_data'
+    description: 'Higher Education data warehouse'
+    location: 's3://data-lake/higher-ed/'
+    permissions:
+      - role: 'DataSteward'
+        access: 'ALL'
+      - role: 'DataAnalyst'
+        access: 'READ'
+      - role: 'DataEngineer'
+        access: 'WRITE'
+
+# Table-level policies
+tables:
+  - name: 'student_records'
+    database: 'higher_ed_data'
+    description: 'Student academic records'
+    columns:
+      - name: 'student_id'
+        masking: 'NONE'
+        access:
+          - role: 'DataSteward'
+            level: 'FULL'
+          - role: 'DataAnalyst'
+            level: 'FULL'
+          - role: 'DataEngineer'
+            level: 'FULL'
+      
+      - name: 'gpa'
+        masking: 'HASH'
+        access:
+          - role: 'DataSteward'
+            level: 'FULL'
+          - role: 'DataAnalyst'
+            level: 'MASKED'
+          - role: 'DataEngineer'
+            level: 'MASKED'
+      
+      - name: 'enrollment_status'
+        masking: 'NONE'
+        access:
+          - role: 'DataSteward'
+            level: 'FULL'
+          - role: 'DataAnalyst'
+            level: 'FULL'
+          - role: 'DataEngineer'
+            level: 'FULL'
+
+# Row-level policies
+row_filters:
+  - name: 'active_students_only'
+    description: 'Filter to show only active students'
+    filter_expression: "enrollment_status = 'ACTIVE'"
+    tables:
+      - 'student_records'
+    roles:
+      - 'DataAnalyst'
+
+# Column-level policies
+column_filters:
+  - name: 'mask_sensitive_data'
+    description: 'Mask sensitive student information'
+    columns:
+      - 'gpa'
+      - 'ssn'
+      - 'date_of_birth'
+    masking_function: 'HASH'
+    roles:
+      - 'DataAnalyst'
+      - 'DataEngineer'
+
+# Tag-based policies
+tags:
+  - name: 'PII'
+    description: 'Personally Identifiable Information'
+    tables:
+      - 'student_records'
+    columns:
+      - 'ssn'
+      - 'date_of_birth'
+      - 'email'
+    access:
+      - role: 'DataSteward'
+        level: 'FULL'
+      - role: 'DataAnalyst'
+        level: 'MASKED'
+      - role: 'DataEngineer'
+        level: 'MASKED'
+
+  - name: 'ACADEMIC'
+    description: 'Academic performance data'
+    tables:
+      - 'student_records'
+    columns:
+      - 'gpa'
+      - 'enrollment_status'
+    access:
+      - role: 'DataSteward'
+        level: 'FULL'
+      - role: 'DataAnalyst'
+        level: 'MASKED'
+      - role: 'DataEngineer'
+        level: 'MASKED' 

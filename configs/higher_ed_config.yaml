@@ -1,0 +1,166 @@
+version: '1.0'
+
+# Higher Education specific configuration
+
+# Data Classification Rules
+classification_rules:
+  sensitive_fields:
+    - 'student_id'
+    - 'ssn'
+    - 'date_of_birth'
+    - 'gpa'
+    - 'financial_aid_status'
+    - 'disability_status'
+    - 'ethnicity'
+    - 'gender'
+  
+  pii_patterns:
+    student_id: '^[A-Z]{2}\d{8}$'
+    ssn: '^\d{3}-?\d{2}-?\d{4}$'
+    email: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    phone: '^\+?1?\d{9,15}$'
+
+# Data Quality Rules
+quality_rules:
+  student_records:
+    - field: 'gpa'
+      type: 'numeric'
+      min_value: 0.0
+      max_value: 4.0
+      null_allowed: false
+    
+    - field: 'enrollment_status'
+      type: 'categorical'
+      allowed_values:
+        - 'ACTIVE'
+        - 'INACTIVE'
+        - 'GRADUATED'
+        - 'WITHDRAWN'
+      null_allowed: false
+    
+    - field: 'student_id'
+      type: 'pattern'
+      pattern: '^[A-Z]{2}\d{8}$'
+      null_allowed: false
+    
+    - field: 'email'
+      type: 'pattern'
+      pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+      null_allowed: false
+
+# Access Control Rules
+access_control:
+  roles:
+    - name: 'Registrar'
+      description: 'Registrar office staff with full access to student records'
+      permissions:
+        - 'SELECT'
+        - 'INSERT'
+        - 'UPDATE'
+        - 'DELETE'
+    
+    - name: 'Faculty'
+      description: 'Teaching faculty with limited access to student records'
+      permissions:
+        - 'SELECT'
+    
+    - name: 'Student'
+      description: 'Students with access to their own records only'
+      permissions:
+        - 'SELECT'
+  
+  row_filters:
+    - name: 'student_own_records'
+      description: 'Students can only view their own records'
+      filter_expression: "student_id = current_user()"
+      roles:
+        - 'Student'
+    
+    - name: 'faculty_department_records'
+      description: 'Faculty can only view records from their department'
+      filter_expression: "department = current_user_department()"
+      roles:
+        - 'Faculty'
+
+# Data Masking Rules
+masking_rules:
+  - field: 'gpa'
+    masking_type: 'HASH'
+    roles:
+      - 'Student'
+      - 'Faculty'
+  
+  - field: 'ssn'
+    masking_type: 'MASK_ALL'
+    roles:
+      - 'Student'
+      - 'Faculty'
+  
+  - field: 'date_of_birth'
+    masking_type: 'MASK_ALL'
+    roles:
+      - 'Student'
+      - 'Faculty'
+
+# Data Retention Rules
+retention_rules:
+  - table: 'student_records'
+    retention_period: '7 years'
+    retention_trigger: 'graduation_date'
+    archive_location: 's3://data-lake/archived/student_records/'
+  
+  - table: 'financial_aid_records'
+    retention_period: '10 years'
+    retention_trigger: 'last_payment_date'
+    archive_location: 's3://data-lake/archived/financial_aid/'
+
+# Data Lineage Rules
+lineage_rules:
+  - source: 'raw_student_records'
+    target: 'curated_student_records'
+    transformation_type: 'ETL'
+    quality_checks:
+      - 'validate_gpa'
+      - 'validate_enrollment_status'
+      - 'mask_sensitive_data'
+  
+  - source: 'curated_student_records'
+    target: 'student_analytics'
+    transformation_type: 'AGGREGATION'
+    metrics:
+      - 'average_gpa'
+      - 'enrollment_count'
+    dimensions:
+      - 'department'
+      - 'semester'
+
+# Compliance Rules
+compliance_rules:
+  - regulation: 'FERPA'
+    description: 'Family Educational Rights and Privacy Act'
+    requirements:
+      - 'Protect student educational records'
+      - 'Limit access to authorized personnel'
+      - 'Maintain audit trails'
+  
+  - regulation: 'GDPR'
+    description: 'General Data Protection Regulation'
+    requirements:
+      - 'Right to be forgotten'
+      - 'Data portability'
+      - 'Consent management'
+
+# Monitoring Rules
+monitoring_rules:
+  - metric: 'data_quality_score'
+    threshold: 0.95
+    alert_channels:
+      - 'email'
+      - 'slack'
+  
+  - metric: 'access_violations'
+    threshold: 0
+    alert_channels:
+      - 'email'
+      - 'slack'
+      - 'pagerduty' 

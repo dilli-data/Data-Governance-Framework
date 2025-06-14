@@ -1,0 +1,122 @@
+version: '1.0'
+
+# GPA Masking Policy for Higher Education
+
+# Policy Definition
+policy:
+  name: 'gpa_masking_policy'
+  description: 'Masks GPA values for non-registrar roles'
+  type: 'COLUMN_MASKING'
+  status: 'ACTIVE'
+
+# Target Configuration
+target:
+  database: 'higher_ed_data'
+  table: 'student_records'
+  column: 'gpa'
+
+# Masking Rules
+masking_rules:
+  - role: 'Registrar'
+    access_level: 'FULL'
+    description: 'Registrar has full access to GPA values'
+  
+  - role: 'Faculty'
+    access_level: 'MASKED'
+    masking_type: 'HASH'
+    description: 'Faculty sees hashed GPA values'
+  
+  - role: 'Student'
+    access_level: 'MASKED'
+    masking_type: 'HASH'
+    description: 'Students see hashed GPA values'
+  
+  - role: 'DataAnalyst'
+    access_level: 'MASKED'
+    masking_type: 'HASH'
+    description: 'Data analysts see hashed GPA values'
+
+# Masking Function
+masking_function:
+  type: 'HASH'
+  algorithm: 'SHA-256'
+  salt: '${ENV:SALT_KEY}'  # Environment variable for salt
+  preserve_format: true
+  preserve_length: true
+
+# Access Control
+access_control:
+  - role: 'Registrar'
+    permissions:
+      - 'SELECT'
+      - 'UPDATE'
+    conditions:
+      - 'is_registrar()'
+  
+  - role: 'Faculty'
+    permissions:
+      - 'SELECT'
+    conditions:
+      - 'is_faculty()'
+      - 'is_department_match()'
+  
+  - role: 'Student'
+    permissions:
+      - 'SELECT'
+    conditions:
+      - 'is_own_record()'
+
+# Audit Configuration
+audit:
+  enabled: true
+  log_level: 'INFO'
+  events:
+    - 'SELECT'
+    - 'UPDATE'
+  destination:
+    type: 'CLOUDWATCH'
+    log_group: '/data-governance/access-logs'
+    retention_days: 90
+
+# Compliance
+compliance:
+  regulations:
+    - 'FERPA'
+    - 'GDPR'
+  requirements:
+    - 'Protect student academic records'
+    - 'Limit access to authorized personnel'
+    - 'Maintain audit trails'
+
+# Monitoring
+monitoring:
+  metrics:
+    - name: 'gpa_access_count'
+      type: 'COUNTER'
+      description: 'Number of GPA field accesses'
+    
+    - name: 'gpa_mask_violations'
+      type: 'COUNTER'
+      description: 'Number of masking policy violations'
+  
+  alerts:
+    - metric: 'gpa_mask_violations'
+      threshold: 0
+      severity: 'HIGH'
+      channels:
+        - 'email'
+        - 'slack'
+        - 'pagerduty'
+
+# Implementation Details
+implementation:
+  lake_formation:
+    catalog_id: '${ENV:AWS_ACCOUNT_ID}'
+    database: 'higher_ed_data'
+    table: 'student_records'
+  
+  glue:
+    job_name: 'gpa_masking_etl'
+    schedule: 'cron(0 0 * * ? *)'
+    timeout: 300
+    max_retries: 3 
