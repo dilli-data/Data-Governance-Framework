@@ -22,6 +22,31 @@ graph TD
     L[Great Expectations] --> G
     M[Lake Formation Policies] --> E
     N[IAM Roles] --> E
+
+    %% Analytics and Visualization Layer
+    D --> O[AWS Athena]
+    D --> P[Amazon Redshift]
+    O --> Q[Amazon QuickSight]
+    P --> Q
+    
+    %% Data Processing and Transformation
+    O --> R[SQL Analytics]
+    P --> S[Data Warehousing]
+    Q --> T[Business Intelligence]
+    
+    %% Integration Points
+    R --> U[Data Insights]
+    S --> U
+    T --> U
+
+    %% Governance Controls
+    E --> V[Athena Governance]
+    E --> W[Redshift Governance]
+    E --> X[QuickSight Governance]
+    
+    V --> Y[Query Access Control]
+    W --> Z[Data Access Policies]
+    X --> AA[Visualization Permissions]
 ```
 
 ## Key Components
@@ -45,6 +70,89 @@ graph TD
 - End-to-end data lineage tracking
 - Metadata management
 - Change history
+
+### 5. Analytics & Visualization
+- AWS Athena for interactive SQL queries
+- Amazon Redshift for data warehousing
+- Amazon QuickSight for business intelligence
+- Real-time analytics and reporting
+- Custom dashboards and visualizations
+
+### 6. Governance Controls by Service
+
+#### AWS Athena Governance
+- **Query Access Control**
+  - IAM policies for query execution
+  - Workgroup-based access restrictions
+  - Query result encryption
+  - Query history monitoring
+  - Cost controls per workgroup
+
+- **Data Access Policies**
+  - Lake Formation integration for fine-grained access
+  - Column-level security
+  - Row-level filtering
+  - Query result encryption
+  - Audit logging of all queries
+
+#### Amazon Redshift Governance
+- **Data Access Control**
+  - Role-based access control (RBAC)
+  - Column-level security
+  - Row-level security (RLS)
+  - Dynamic data masking
+  - Data sharing controls
+
+- **Security Features**
+  - Encryption at rest and in transit
+  - Network isolation (VPC)
+  - Audit logging
+  - Automated backups
+  - Cross-region replication
+
+- **Compliance Controls**
+  - Data retention policies
+  - Access logging
+  - Compliance reporting
+  - Automated policy enforcement
+
+#### Amazon QuickSight Governance
+- **User Access Management**
+  - IAM integration for user authentication
+  - Role-based permissions
+  - Dashboard sharing controls
+  - Row-level security integration
+
+- **Data Source Controls**
+  - Secure data source connections
+  - Credential management
+  - Data refresh policies
+  - Source access logging
+
+- **Content Security**
+  - Dashboard encryption
+  - Export controls
+  - Print restrictions
+  - Watermarking options
+
+### 7. Cross-Service Governance Integration
+- **Unified Access Control**
+  - Single sign-on (SSO) integration
+  - Consistent permission model
+  - Centralized user management
+  - Cross-service audit logging
+
+- **Data Lineage Tracking**
+  - End-to-end data flow monitoring
+  - Impact analysis
+  - Change tracking
+  - Compliance reporting
+
+- **Compliance Monitoring**
+  - Automated policy checks
+  - Real-time alerts
+  - Compliance dashboards
+  - Audit trail generation
 
 ## Deployment Steps
 
