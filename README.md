@@ -7,46 +7,40 @@ A modular, industry-agnostic data governance framework built on AWS-native servi
 
 ```mermaid
 graph TD
-    A[Raw Data Sources] --> B[S3 Raw Zone]
-    B --> C[AWS Glue ETL]
-    C --> D[S3 Curated Zone]
-    D --> E[AWS Lake Formation]
-    E --> F[Data Access Layer]
-    
-    G[Data Quality Rules] --> C
-    H[Access Policies] --> E
-    I[Metadata Classification] --> C
-    J[Lineage Tracking] --> C
-    
-    K[dbt Transformations] --> D
-    L[Great Expectations] --> G
-    M[Lake Formation Policies] --> E
-    N[IAM Roles] --> E
+    subgraph "Data Ingestion & Storage"
+        A[Raw Data Sources] --> B[S3 Raw Zone]
+        B --> C[AWS Glue ETL]
+        C --> D[S3 Curated Zone]
+    end
 
-    %% Analytics and Visualization Layer
-    D --> O[AWS Athena]
-    D --> P[Amazon Redshift]
-    O --> Q[Amazon QuickSight]
-    P --> Q
-    
-    %% Data Processing and Transformation
-    O --> R[SQL Analytics]
-    P --> S[Data Warehousing]
-    Q --> T[Business Intelligence]
-    
-    %% Integration Points
-    R --> U[Data Insights]
-    S --> U
-    T --> U
+    subgraph "Data Governance Layer"
+        D --> E[AWS Lake Formation]
+        E --> F[Data Access Control]
+        G[Data Quality Rules] --> C
+        H[Access Policies] --> E
+    end
 
-    %% Governance Controls
-    E --> V[Athena Governance]
-    E --> W[Redshift Governance]
-    E --> X[QuickSight Governance]
-    
-    V --> Y[Query Access Control]
-    W --> Z[Data Access Policies]
-    X --> AA[Visualization Permissions]
+    subgraph "Data Transformation"
+        D --> I[dbt Models]
+        I --> J[Staging Layer]
+        J --> K[Intermediate Layer]
+        K --> L[Mart Layer]
+    end
+
+    subgraph "Analytics & Visualization"
+        L --> M[AWS Athena]
+        L --> N[Amazon Redshift]
+        M --> O[Amazon QuickSight]
+        N --> O
+    end
+
+    subgraph "Monitoring & Compliance"
+        P[CloudWatch] --> C
+        P --> E
+        P --> M
+        P --> N
+        Q[Compliance Checks] --> P
+    end
 ```
 
 ## Key Components
@@ -328,3 +322,193 @@ dbt run --profiles-dir . --target prod
 - AWS Glue
 - dbt Labs
 - Great Expectations
+
+## Code to Instruction Mapping
+
+### 1. Infrastructure as Code (Terraform)
+```
+infra/
+├── modules/
+│   ├── data_lake/          # S3 buckets and data lake setup
+│   ├── glue_catalog/       # Glue database and table definitions
+│   ├── iam_roles/          # IAM roles and policies
+│   └── lake_formation/     # Lake Formation permissions
+```
+
+**Implementation Steps:**
+1. Deploy base infrastructure:
+```bash
+cd infra
+terraform init
+terraform apply
+```
+
+### 2. Data Quality Framework
+```
+framework/
+├── quality_rules.py        # Data quality rules implementation
+└── great_expectations/     # Great Expectations configurations
+```
+
+**Implementation Steps:**
+1. Set up data quality rules:
+```bash
+python framework/quality_rules.py --config configs/your_industry_config.yaml
+```
+
+### 3. Data Transformation (dbt)
+```
+framework/dbt_project/
+├── models/
+│   ├── staging/           # Raw data models
+│   ├── intermediate/      # Transformed data models
+│   └── marts/            # Analytics-ready models
+├── dbt_project.yml       # Project configuration
+└── profiles.yml          # Connection profiles
+```
+
+**Implementation Steps:**
+1. Configure dbt:
+```bash
+cd framework/dbt_project
+dbt deps
+dbt run
+```
+
+### 4. Access Control Implementation
+```
+framework/
+├── access_policies.yaml   # Access control definitions
+└── scripts/
+    └── deploy_lake_formation_policies.py
+```
+
+**Implementation Steps:**
+1. Deploy access policies:
+```bash
+python scripts/deploy_lake_formation_policies.py --config configs/your_industry_config.yaml
+```
+
+### 5. Analytics Layer Setup
+
+#### AWS Athena
+```yaml
+# configs/athena_config.yaml
+workgroups:
+  - name: analytics
+    encryption: SSE_S3
+    query_results_location: s3://data-lake-bucket/athena-results/
+    access_control:
+      - role: DataAnalyst
+        permissions: ["SELECT"]
+```
+
+**Implementation Steps:**
+1. Create Athena workgroups:
+```bash
+aws athena create-work-group --name analytics --configuration file://configs/athena_config.yaml
+```
+
+#### Amazon Redshift
+```yaml
+# configs/redshift_config.yaml
+cluster:
+  node_type: ra3.xlplus
+  number_of_nodes: 2
+  encryption: true
+  vpc_security_groups: ["sg-xxxxx"]
+  iam_roles:
+    - arn:aws:iam::account:role/RedshiftLoadRole
+```
+
+**Implementation Steps:**
+1. Deploy Redshift cluster:
+```bash
+aws redshift create-cluster --cli-input-json file://configs/redshift_config.yaml
+```
+
+#### Amazon QuickSight
+```yaml
+# configs/quicksight_config.yaml
+datasources:
+  - name: student_analytics
+    type: ATHENA
+    connection:
+      database: higher_ed_data
+      workgroup: analytics
+    permissions:
+      - principal: DataAnalyst
+        actions: ["read", "query"]
+```
+
+**Implementation Steps:**
+1. Configure QuickSight:
+```bash
+aws quicksight create-data-source --cli-input-json file://configs/quicksight_config.yaml
+```
+
+### 6. Monitoring and Compliance
+```
+framework/
+├── monitoring/
+│   ├── cloudwatch_alarms.py
+│   └── compliance_checks.py
+└── scripts/
+    └── generate_compliance_report.py
+```
+
+**Implementation Steps:**
+1. Set up monitoring:
+```bash
+python framework/monitoring/cloudwatch_alarms.py
+python framework/monitoring/compliance_checks.py
+```
+
+### 7. Testing and Validation
+```
+framework/
+├── tests/
+│   ├── test_data_quality.py
+│   ├── test_access_control.py
+│   └── test_compliance.py
+└── scripts/
+    └── run_validation.py
+```
+
+**Implementation Steps:**
+1. Run tests:
+```bash
+python -m pytest framework/tests/
+python framework/scripts/run_validation.py
+```
+
+## Directory Structure with Purpose
+
+```
+├── framework/                    # Core framework implementation
+│   ├── metadata_classification.py    # Metadata tagging and classification
+│   ├── quality_rules.py             # Data quality rules
+│   ├── access_policies.yaml         # Access control definitions
+│   ├── lineage_tracking_stub.py     # Data lineage implementation
+│   └── dbt_project/                # Data transformation layer
+│       ├── models/                 # dbt models
+│       │   ├── staging/           # Raw data models
+│       │   ├── intermediate/      # Transformed data models
+│       │   └── marts/            # Analytics-ready models
+│       ├── dbt_project.yml       # Project configuration
+│       └── profiles.yml          # Connection profiles
+├── examples/                     # Example implementations
+│   └── higher_ed/               # Higher education example
+│       ├── student_records_sample.csv
+│       ├── gpa_masking_policy.yaml
+│       └── role_matrix.json
+├── scripts/                     # Deployment and utility scripts
+│   ├── deploy_lake_formation_policies.py
+│   └── glue_job_sample.py
+├── configs/                     # Configuration files
+│   ├── higher_ed_config.yaml    # Higher education configuration
+│   ├── finance_config.yaml      # Finance industry configuration
+│   └── healthcare_config.yaml   # Healthcare industry configuration
+└── infra/                      # Infrastructure as Code
+    └── [Terraform/CDK files]    # Infrastructure definitions
+```
