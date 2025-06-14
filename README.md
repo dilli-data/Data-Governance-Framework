@@ -2,8 +2,6 @@
 
 A modular, industry-agnostic data governance framework built on AWS-native services. This framework provides a flexible foundation for implementing data governance across various industries while maintaining compliance, data quality, and security.
 
-## Author
-**Dilliraja Sundar**
 
 ## Architecture
 
@@ -212,6 +210,9 @@ dbt run --profiles-dir . --target prod
 └── infra/
     └── [Terraform/CDK files]
 ```
+
+## Author
+**Dilliraja Sundar**
 
 ## Acknowledgments
 
