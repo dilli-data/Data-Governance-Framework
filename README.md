@@ -2,6 +2,9 @@
 
 A modular, industry-agnostic data governance framework built on AWS-native services. This framework provides a flexible foundation for implementing data governance across various industries while maintaining compliance, data quality, and security.
 
+## Author
+**Dilliraja Sundar**
+
 ## Architecture
 
 ```mermaid
@@ -40,32 +43,111 @@ graph TD
 - Metadata management
 - Change history
 
-## Getting Started
+## Deployment Steps
 
-### Prerequisites
+### 1. Prerequisites
 - AWS Account with appropriate permissions
 - Python 3.8+
 - AWS CLI configured
-- Terraform or AWS CDK installed
+- Terraform installed
+- Git installed
 
-### Installation
-
-1. Clone this repository
-2. Install dependencies:
+### 2. Clone the Repository
 ```bash
+git clone <repository-url>
+cd data-governance-framework
+```
+
+### 3. Set Up Python Environment
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-3. Configure your AWS credentials:
+### 4. Configure AWS Credentials
 ```bash
 aws configure
+# Enter your AWS Access Key ID
+# Enter your AWS Secret Access Key
+# Enter your default region
+# Enter your output format (json)
 ```
 
-4. Deploy the infrastructure:
+### 5. Deploy Infrastructure
 ```bash
+# Navigate to infrastructure directory
 cd infra
+
+# Initialize Terraform
 terraform init
+
+# Review the planned changes
+terraform plan
+
+# Apply the infrastructure
 terraform apply
+
+# Note down the outputs for later use
+terraform output
+```
+
+### 6. Configure Industry-Specific Settings
+```bash
+# Copy the Higher Education example configuration
+cp configs/higher_ed_config.yaml configs/your_industry_config.yaml
+
+# Edit the configuration file with your industry-specific rules
+# - Update classification rules
+# - Modify quality rules
+# - Adjust access control policies
+# - Configure masking rules
+```
+
+### 7. Deploy Lake Formation Policies
+```bash
+# Deploy access policies
+python scripts/deploy_lake_formation_policies.py --config configs/your_industry_config.yaml
+```
+
+### 8. Set Up Data Pipeline
+```bash
+# Upload sample data to S3
+aws s3 cp examples/higher_ed/student_records_sample.csv s3://<data-lake-bucket>/raw/student_records/
+
+# Create and start Glue crawler
+aws glue start-crawler --name data-governance-student-records-crawler
+
+# Deploy Glue ETL job
+aws glue create-job --name data-governance-etl --role <data-steward-role-arn> --command "Name=glueetl,ScriptLocation=s3://<bucket>/scripts/glue_job_sample.py"
+
+# Start the ETL job
+aws glue start-job-run --job-name data-governance-etl
+```
+
+### 9. Verify Deployment
+```bash
+# Check S3 buckets
+aws s3 ls s3://<data-lake-bucket>/
+
+# Verify Glue database and tables
+aws glue get-database --name higher_ed_data
+aws glue get-tables --database-name higher_ed_data
+
+# Check Lake Formation permissions
+aws lakeformation list-permissions --resource-type DATABASE
+```
+
+### 10. Monitor and Maintain
+```bash
+# View CloudWatch logs
+aws logs get-log-events --log-group-name /data-governance/access-logs
+
+# Check CloudWatch alarms
+aws cloudwatch describe-alarms --alarm-name-prefix data-governance
 ```
 
 ## Industry-Specific Implementations
