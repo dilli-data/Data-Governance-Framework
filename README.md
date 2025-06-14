@@ -313,16 +313,6 @@ dbt run --profiles-dir . --target prod
     └── [Terraform/CDK files]
 ```
 
-## Author
-**Dilliraja Sundar**
-
-## Acknowledgments
-
-- AWS Lake Formation
-- AWS Glue
-- dbt Labs
-- Great Expectations
-
 ## Code to Instruction Mapping
 
 ### 1. Infrastructure as Code (Terraform)
@@ -512,3 +502,13 @@ python framework/scripts/run_validation.py
 └── infra/                      # Infrastructure as Code
     └── [Terraform/CDK files]    # Infrastructure definitions
 ```
+
+## Author
+**Dilliraja Sundar**
+
+## Acknowledgments
+
+- AWS Lake Formation
+- AWS Glue
+- dbt Labs
+- Great Expectations
