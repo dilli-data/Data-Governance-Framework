@@ -1,4 +1,4 @@
-# AWS Data Governance Framework
+# Data Governance Framework
 
 A modular, industry-agnostic data governance framework built on AWS-native services. This framework provides a flexible foundation for implementing data governance across various industries while maintaining compliance, data quality, and security.
 
