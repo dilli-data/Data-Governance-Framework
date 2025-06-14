@@ -1,160 +1,104 @@
 {
   "version": "1.0",
   "roles": {
-    "Registrar": {
-      "description": "Registrar office staff with full access to student records",
-      "permissions": {
-        "student_records": {
-          "read": true,
-          "write": true,
-          "delete": true,
-          "masking": false
-        },
-        "financial_records": {
-          "read": true,
-          "write": true,
-          "delete": false,
-          "masking": false
-        },
-        "academic_records": {
-          "read": true,
-          "write": true,
-          "delete": true,
-          "masking": false
-        }
+    "data_steward": {
+      "iam_role": "arn:aws:iam::123456789012:role/data-governance-steward",
+      "lake_formation_permissions": {
+        "database": ["ALL"],
+        "table": ["ALL"],
+        "column": ["ALL"]
       },
       "row_filters": [],
-      "column_filters": [],
-      "audit_level": "HIGH"
+      "column_filters": []
     },
-    "Faculty": {
-      "description": "Teaching faculty with limited access to student records",
-      "permissions": {
-        "student_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "financial_records": {
-          "read": false,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "academic_records": {
-          "read": true,
-          "write": true,
-          "delete": false,
-          "masking": true
-        }
+    "data_analyst": {
+      "iam_role": "arn:aws:iam::123456789012:role/data-governance-analyst",
+      "lake_formation_permissions": {
+        "database": ["DESCRIBE", "SELECT"],
+        "table": ["DESCRIBE", "SELECT"],
+        "column": ["DESCRIBE", "SELECT"]
       },
-      "row_filters": [
-        {
-          "name": "department_filter",
-          "condition": "department = current_user_department()"
-        }
-      ],
-      "column_filters": [
-        {
-          "name": "mask_sensitive_data",
-          "columns": ["ssn", "date_of_birth", "gpa"]
-        }
-      ],
-      "audit_level": "MEDIUM"
+      "row_filters": ["active_students_only"],
+      "column_filters": ["mask_sensitive_data"]
     },
-    "Student": {
-      "description": "Students with access to their own records only",
-      "permissions": {
-        "student_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "financial_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "academic_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        }
-      },
-      "row_filters": [
-        {
-          "name": "own_records_filter",
-          "condition": "student_id = current_user()"
-        }
-      ],
-      "column_filters": [
-        {
-          "name": "mask_sensitive_data",
-          "columns": ["ssn", "date_of_birth", "gpa"]
-        }
-      ],
-      "audit_level": "LOW"
-    },
-    "DataAnalyst": {
-      "description": "Data analysts with access to aggregated data",
-      "permissions": {
-        "student_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "financial_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        },
-        "academic_records": {
-          "read": true,
-          "write": false,
-          "delete": false,
-          "masking": true
-        }
+    "data_engineer": {
+      "iam_role": "arn:aws:iam::123456789012:role/data-governance-engineer",
+      "lake_formation_permissions": {
+        "database": ["DESCRIBE", "SELECT", "ALTER", "INSERT", "DELETE", "CREATE_TABLE"],
+        "table": ["DESCRIBE", "SELECT", "ALTER", "INSERT", "DELETE"],
+        "column": ["DESCRIBE", "SELECT", "ALTER"]
       },
       "row_filters": [],
-      "column_filters": [
-        {
-          "name": "mask_sensitive_data",
-          "columns": ["ssn", "date_of_birth", "gpa", "email"]
+      "column_filters": ["mask_sensitive_data"]
+    },
+    "faculty": {
+      "iam_roles": {
+        "math_faculty": {
+          "role_arn": "arn:aws:iam::123456789012:role/math-faculty",
+          "user_pattern": "%math%"
+        },
+        "cs_faculty": {
+          "role_arn": "arn:aws:iam::123456789012:role/cs-faculty",
+          "user_pattern": "%cs%"
+        },
+        "eng_faculty": {
+          "role_arn": "arn:aws:iam::123456789012:role/eng-faculty",
+          "user_pattern": "%eng%"
         }
-      ],
-      "audit_level": "HIGH"
+      },
+      "lake_formation_permissions": {
+        "database": ["DESCRIBE", "SELECT"],
+        "table": ["DESCRIBE", "SELECT"],
+        "column": ["DESCRIBE", "SELECT"]
+      },
+      "row_filters": ["department_access"],
+      "column_filters": ["mask_sensitive_data"],
+      "conditional_access": {
+        "gpa": {
+          "condition": "department_match",
+          "description": "Faculty can only see GPA for students in their department"
+        }
+      }
     }
   },
-  "default_permissions": {
-    "read": false,
-    "write": false,
-    "delete": false,
-    "masking": true
-  },
-  "audit_config": {
-    "enabled": true,
-    "log_level": "INFO",
-    "retention_days": 90,
-    "destinations": [
-      "CLOUDWATCH",
-      "S3"
-    ]
-  },
-  "compliance": {
-    "regulations": [
-      "FERPA",
-      "GDPR"
+  "permission_mappings": {
+    "ALL": [
+      "DESCRIBE",
+      "SELECT",
+      "ALTER",
+      "INSERT",
+      "DELETE",
+      "DROP",
+      "CREATE_TABLE",
+      "CREATE_DATABASE",
+      "GRANT",
+      "REVOKE"
     ],
-    "requirements": [
-      "Protect student educational records",
-      "Limit access to authorized personnel",
-      "Maintain audit trails"
+    "READ": [
+      "DESCRIBE",
+      "SELECT"
+    ],
+    "WRITE": [
+      "DESCRIBE",
+      "SELECT",
+      "ALTER",
+      "INSERT",
+      "DELETE",
+      "CREATE_TABLE"
     ]
+  },
+  "masking_functions": {
+    "HASH": {
+      "type": "hash",
+      "algorithm": "SHA-256"
+    },
+    "NULL": {
+      "type": "constant",
+      "value": null
+    },
+    "CUSTOM": {
+      "type": "expression",
+      "description": "Custom masking based on department and user role"
+    }
   }
 } 

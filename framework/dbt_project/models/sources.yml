@@ -1,0 +1,50 @@
+version: 2
+
+sources:
+  - name: higher_ed_data
+    database: higher_ed_data
+    schema: higher_ed_data
+    tables:
+      - name: student_records
+        description: "Raw student records from S3/Glue Catalog"
+        columns:
+          - name: student_id
+            description: "Unique identifier for each student"
+            tests:
+              - unique
+              - not_null
+          - name: first_name
+            description: "Student's first name"
+            tests:
+              - not_null
+          - name: last_name
+            description: "Student's last name"
+            tests:
+              - not_null
+          - name: email
+            description: "Student's email address"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('higher_ed_data', 'student_records')
+                  field: student_id
+          - name: gpa
+            description: "Student's GPA"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: ">= 0.0 and <= 4.0"
+          - name: department
+            description: "Student's department"
+            tests:
+              - not_null
+          - name: major
+            description: "Student's major"
+            tests:
+              - not_null
+          - name: enrollment_status
+            description: "Student's enrollment status"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['ACTIVE', 'INACTIVE', 'GRADUATED', 'WITHDRAWN'] 

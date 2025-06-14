@@ -19,6 +19,11 @@ graph TD
     H[Access Policies] --> E
     I[Metadata Classification] --> C
     J[Lineage Tracking] --> C
+    
+    K[dbt Transformations] --> D
+    L[Great Expectations] --> G
+    M[Lake Formation Policies] --> E
+    N[IAM Roles] --> E
 ```
 
 ## Key Components
@@ -51,10 +56,12 @@ graph TD
 - AWS CLI configured
 - Terraform installed
 - Git installed
+- dbt installed
+- Great Expectations installed
 
 ### 2. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/dilliraja/data-governance-framework.git
 cd data-governance-framework
 ```
 
@@ -128,7 +135,26 @@ aws glue create-job --name data-governance-etl --role <data-steward-role-arn> --
 aws glue start-job-run --job-name data-governance-etl
 ```
 
-### 9. Verify Deployment
+### 9. Set Up dbt Project
+```bash
+# Navigate to dbt project directory
+cd framework/dbt_project
+
+# Install dbt dependencies
+dbt deps
+
+# Run dbt models
+dbt run
+
+# Run tests
+dbt test
+
+# Generate documentation
+dbt docs generate
+dbt docs serve
+```
+
+### 10. Verify Deployment
 ```bash
 # Check S3 buckets
 aws s3 ls s3://<data-lake-bucket>/
@@ -139,31 +165,22 @@ aws glue get-tables --database-name higher_ed_data
 
 # Check Lake Formation permissions
 aws lakeformation list-permissions --resource-type DATABASE
+
+# Verify dbt models
+dbt test
 ```
 
-### 10. Monitor and Maintain
+### 11. Monitor and Maintain
 ```bash
 # View CloudWatch logs
 aws logs get-log-events --log-group-name /data-governance/access-logs
 
 # Check CloudWatch alarms
 aws cloudwatch describe-alarms --alarm-name-prefix data-governance
+
+# Monitor dbt runs
+dbt run --profiles-dir . --target prod
 ```
-
-## Industry-Specific Implementations
-
-### Higher Education Example
-The framework includes a complete Higher Education implementation example that demonstrates:
-- Student record privacy controls
-- GPA masking for sensitive data
-- Role-based access for faculty and administration
-- Data quality rules for academic records
-
-### Configuration
-Each industry implementation is driven by YAML configuration files in the `/configs` directory. To implement for a new industry:
-1. Create a new config file in `/configs`
-2. Define industry-specific rules and policies
-3. Deploy using the provided scripts
 
 ## Directory Structure
 
@@ -172,7 +189,14 @@ Each industry implementation is driven by YAML configuration files in the `/conf
 │   ├── metadata_classification.py
 │   ├── quality_rules.py
 │   ├── access_policies.yaml
-│   └── lineage_tracking_stub.py
+│   ├── lineage_tracking_stub.py
+│   └── dbt_project/
+│       ├── models/
+│       │   ├── staging/
+│       │   ├── intermediate/
+│       │   └── marts/
+│       ├── dbt_project.yml
+│       └── profiles.yml
 ├── examples/
 │   └── higher_ed/
 │       ├── student_records_sample.csv
@@ -192,9 +216,18 @@ Each industry implementation is driven by YAML configuration files in the `/conf
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License - See LICENSE file for details 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- AWS Lake Formation
+- AWS Glue
+- dbt Labs
+- Great Expectations

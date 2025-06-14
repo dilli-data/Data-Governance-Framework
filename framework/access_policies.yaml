@@ -37,6 +37,12 @@ roles:
       - 'DELETE'
       - 'CREATE_TABLE'
 
+  - name: 'Faculty'
+    description: 'Department faculty members'
+    permissions:
+      - 'DESCRIBE'
+      - 'SELECT'
+
 # Database-level policies
 databases:
   - name: 'higher_ed_data'
@@ -49,6 +55,8 @@ databases:
         access: 'READ'
       - role: 'DataEngineer'
         access: 'WRITE'
+      - role: 'Faculty'
+        access: 'READ'
 
 # Table-level policies
 tables:
@@ -65,9 +73,18 @@ tables:
             level: 'FULL'
           - role: 'DataEngineer'
             level: 'FULL'
+          - role: 'Faculty'
+            level: 'FULL'
       
       - name: 'gpa'
-        masking: 'HASH'
+        masking: 'CUSTOM'
+        masking_function: |
+          CASE
+            WHEN department = 'Mathematics' AND current_user() LIKE '%math%' THEN gpa
+            WHEN department = 'Computer Science' AND current_user() LIKE '%cs%' THEN gpa
+            WHEN department = 'Engineering' AND current_user() LIKE '%eng%' THEN gpa
+            ELSE NULL
+          END
         access:
           - role: 'DataSteward'
             level: 'FULL'
@@ -75,6 +92,8 @@ tables:
             level: 'MASKED'
           - role: 'DataEngineer'
             level: 'MASKED'
+          - role: 'Faculty'
+            level: 'CONDITIONAL'
       
       - name: 'enrollment_status'
         masking: 'NONE'
@@ -85,9 +104,25 @@ tables:
             level: 'FULL'
           - role: 'DataEngineer'
             level: 'FULL'
+          - role: 'Faculty'
+            level: 'FULL'
 
 # Row-level policies
 row_filters:
+  - name: 'department_access'
+    description: 'Filter records based on faculty department'
+    filter_expression: |
+      CASE
+        WHEN current_user() LIKE '%math%' THEN department = 'Mathematics'
+        WHEN current_user() LIKE '%cs%' THEN department = 'Computer Science'
+        WHEN current_user() LIKE '%eng%' THEN department = 'Engineering'
+        ELSE FALSE
+      END
+    tables:
+      - 'student_records'
+    roles:
+      - 'Faculty'
+
   - name: 'active_students_only'
     description: 'Filter to show only active students'
     filter_expression: "enrollment_status = 'ACTIVE'"
@@ -126,6 +161,8 @@ tags:
         level: 'MASKED'
       - role: 'DataEngineer'
         level: 'MASKED'
+      - role: 'Faculty'
+        level: 'MASKED'
 
   - name: 'ACADEMIC'
     description: 'Academic performance data'
@@ -140,4 +177,6 @@ tags:
       - role: 'DataAnalyst'
         level: 'MASKED'
       - role: 'DataEngineer'
-        level: 'MASKED' 
+        level: 'MASKED'
+      - role: 'Faculty'
+        level: 'CONDITIONAL' 
