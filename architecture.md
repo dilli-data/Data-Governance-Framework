@@ -1,132 +1,145 @@
 ```mermaid
 graph TD
-    subgraph "Data Sources"
-        S3[S3 Buckets]
-        RDS[RDS Databases]
+    subgraph "Data Sources & Ingestion"
+        DS1[Raw Data Sources] --> S3R[S3 Raw Zone]
+        DS2[RDS Databases] --> S3R
+        S3R --> GLUE[AWS Glue ETL]
+        GLUE --> S3C[S3 Curated Zone]
     end
 
-    subgraph "Data Lake"
+    subgraph "Data Governance & Access Control"
         LF[Lake Formation]
-        GC[Glue Catalog]
-        S3 --> LF
-        RDS --> LF
-        LF --> GC
-    end
-
-    subgraph "Access Control"
         IAM[IAM Roles]
-        LF --> IAM
+        GC[Glue Catalog]
+        
+        S3C --> LF
+        LF --> GC
         IAM --> LF
-    end
-
-    subgraph "Analytics Services"
-        A[Athena]
-        R[Redshift]
-        Q[QuickSight]
+        LF --> IAM
         
-        subgraph "Athena Access Flow"
-            A1[User Query] --> A2[Lake Formation Check]
-            A2 --> A3[Apply RLS/Column Masking]
-            A3 --> A4[Return Filtered Data]
+        subgraph "Access Control Flow"
+            direction TB
+            A1[User Request] --> A2[IAM Verification]
+            A2 --> A3[Lake Formation Check]
+            A3 --> A4[Apply RLS/Column Masking]
+            A4 --> A5[Return Filtered Data]
         end
-        
-        subgraph "Redshift Access Flow"
-            R1[User Query] --> R2[IAM Verification]
-            R2 --> R3[Lake Formation Check]
-            R3 --> R4[Apply RLS/Column Masking]
-            R4 --> R5[Return Filtered Data]
-        end
-        
-        subgraph "QuickSight Access Flow"
-            Q1[User Access] --> Q2[IAM Verification]
-            Q2 --> Q3[Lake Formation Check]
-            Q3 --> Q4[Apply RLS/Column Masking]
-            Q4 --> Q5[Show Filtered Dashboard]
-        end
-    end
-
-    subgraph "Data Quality"
-        GE[Great Expectations]
-        GE --> S3
     end
 
     subgraph "Data Transformation"
-        DBT[dbt]
-        DBT --> R
+        S3C --> DBT[dbt Models]
+        DBT --> STG[Staging Layer]
+        STG --> INT[Intermediate Layer]
+        INT --> MART[Mart Layer]
     end
 
-    %% Access Control Connections
-    IAM --> A
-    IAM --> R
-    IAM --> Q
-    
-    %% Data Flow
-    GC --> A
-    GC --> R
-    R --> Q
-    A --> Q
+    subgraph "Analytics & Visualization"
+        MART --> ATH[Athena]
+        MART --> RS[Redshift]
+        
+        subgraph "Athena Access"
+            direction TB
+            ATH1[Query] --> ATH2[LF Check]
+            ATH2 --> ATH3[Apply Security]
+            ATH3 --> ATH4[Results]
+        end
+        
+        subgraph "Redshift Access"
+            direction TB
+            RS1[Query] --> RS2[LF Check]
+            RS2 --> RS3[Apply Security]
+            RS3 --> RS4[Results]
+        end
+        
+        ATH --> QS[QuickSight]
+        RS --> QS
+        
+        subgraph "QuickSight Access"
+            direction TB
+            QS1[Dashboard] --> QS2[LF Check]
+            QS2 --> QS3[Apply Security]
+            QS3 --> QS4[View]
+        end
+    end
+
+    subgraph "Data Quality & Monitoring"
+        GE[Great Expectations] --> S3R
+        GE --> S3C
+        CW[CloudWatch] --> GLUE
+        CW --> LF
+        CW --> ATH
+        CW --> RS
+        CW --> QS
+    end
 
     %% Styling
     classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:white;
     classDef service fill:#232F3E,stroke:#FF9900,stroke-width:2px,color:white;
     classDef flow fill:#666666,stroke:#FF9900,stroke-width:1px,color:white;
+    classDef storage fill:#232F3E,stroke:#FF9900,stroke-width:2px,color:white;
     
-    class S3,RDS,LF,GC,A,R,Q aws;
+    class DS1,DS2,GLUE,LF,GC,ATH,RS,QS,CW aws;
     class IAM,GE,DBT service;
-    class A1,A2,A3,A4,R1,R2,R3,R4,R5,Q1,Q2,Q3,Q4,Q5 flow;
+    class A1,A2,A3,A4,A5,ATH1,ATH2,ATH3,ATH4,RS1,RS2,RS3,RS4,QS1,QS2,QS3,QS4 flow;
+    class S3R,S3C,STG,INT,MART storage;
 ```
 
-## Access Control Flow Explanation
+## Architecture Components
 
-### 1. Athena Access Control
-1. User submits a query through Athena
-2. Query is intercepted by Lake Formation
-3. Lake Formation checks:
-   - User's IAM role
-   - Table/column permissions
-   - Row-level security policies
-   - Column masking rules
-4. If authorized, query proceeds with applied restrictions
-5. Results are returned to user with appropriate data masking
+### 1. Data Sources & Ingestion
+- Raw data sources (CSV, JSON, etc.)
+- RDS databases
+- S3 Raw Zone for landing data
+- AWS Glue ETL for data processing
+- S3 Curated Zone for processed data
 
-### 2. Redshift Access Control
-1. User connects to Redshift
-2. Authentication through IAM role
-3. Lake Formation checks permissions
-4. Row-level security policies are applied
-5. Column masking is enforced
-6. Filtered data is returned to user
+### 2. Data Governance & Access Control
+- Lake Formation for centralized access control
+- IAM roles for authentication
+- Glue Catalog for metadata management
+- Access control flow:
+  1. User request
+  2. IAM verification
+  3. Lake Formation permission check
+  4. Apply row-level security/column masking
+  5. Return filtered data
 
-### 3. QuickSight Access Control
-1. User accesses QuickSight dashboard
-2. IAM role is verified
-3. Lake Formation permissions are checked
-4. Row-level security and column masking are applied
-5. User sees only authorized data in dashboard
+### 3. Data Transformation
+- dbt models for data transformation
+- Staging layer for raw data
+- Intermediate layer for transformations
+- Mart layer for analytics-ready data
 
-## Key Components
+### 4. Analytics & Visualization
+- Athena for interactive SQL queries
+- Redshift for data warehousing
+- QuickSight for visualization
+- Each service has its own access control flow
 
-### Lake Formation
-- Central access control point
-- Manages permissions for all data access
-- Enforces row-level security
-- Applies column masking
-- Integrates with IAM roles
+### 5. Data Quality & Monitoring
+- Great Expectations for data quality
+- CloudWatch for monitoring
+- End-to-end observability
 
-### IAM Roles
-- Defines user permissions
-- Maps to Lake Formation access levels
-- Controls service access
-- Manages authentication
+## Access Control Flow
 
-### Row-Level Security
-- Filters data based on user attributes
-- Applied at query time
-- Consistent across all services
-- Managed through Lake Formation
+### 1. User Authentication
+- IAM roles define user permissions
+- Lake Formation manages data access
+- Consistent permission model across services
 
-### Column Masking
-- Protects sensitive data
-- Applied dynamically
-- Consistent across services
+### 2. Data Access
+- Row-level security filters data
+- Column masking protects sensitive data
+- Access policies are service-agnostic
+
+### 3. Service-Specific Controls
+- Athena: Query-level access control
+- Redshift: Table and column-level security
+- QuickSight: Dashboard and visualization access
+
+### 4. Monitoring & Audit
+- CloudWatch for real-time monitoring
+- Access logs for audit trails
+- Compliance reporting 
 - Configurable per column 
